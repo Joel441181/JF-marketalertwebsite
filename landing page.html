@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MarketAlert — Know the second the naira moves</title>
+<meta name="description" content="Instant Telegram alerts the moment USD/NGN, gold, or crypto hits your price. Built for freelancers, importers, and traders who can't afford to check manually." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0B0E14;
+    --surface: #12161F;
+    --surface-2: #171C27;
+    --border: #232838;
+    --text-primary: #E7EAF0;
+    --text-secondary: #8A93A6;
+    --positive: #3ADD9A;
+    --negative: #FF5C72;
+    --accent: #5B8CFF;
+    --warning: #FFB020;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .display { font-family: 'Space Grotesk', sans-serif; }
+
+  a { color: inherit; text-decoration: none; }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(11, 14, 20, 0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 17px;
+  }
+  .brand-mark {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--bg);
+    font-weight: 700;
+  }
+  .nav-cta {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    transition: opacity 0.15s;
+  }
+  .nav-cta:hover { opacity: 0.88; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 88px 0 80px;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--positive);
+    background: rgba(58, 221, 154, 0.1);
+    border: 1px solid rgba(58, 221, 154, 0.25);
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+  .eyebrow-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--positive);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.35; }
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(34px, 4.6vw, 52px);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
+  }
+  h1 span { color: var(--accent); }
+  .hero-sub {
+    font-size: 17px;
+    color: var(--text-secondary);
+    max-width: 480px;
+    margin-bottom: 32px;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 13px 24px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .btn-primary:hover { transform: translateY(-1px); opacity: 0.92; }
+  .btn-secondary {
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 13px 22px;
+    border-radius: 9px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); background: var(--surface); }
+  .hero-note {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ---------- Signature: live alert bubble demo ---------- */
+  .phone-frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    position: relative;
+    min-height: 360px;
+  }
+  .phone-frame::before {
+    content: 'TELEGRAM';
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+  }
+  .bubble {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-top: 20px;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: bubbleIn 0.5s ease forwards;
+  }
+  @keyframes bubbleIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .bubble-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--warning);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .bubble-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+  .bubble-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; }
+  .bubble-row .label { color: var(--text-secondary); }
+  .bubble-row .val { font-family: 'IBM Plex Mono', monospace; }
+  .val.up { color: var(--positive); }
+  .val.down { color: var(--negative); }
+  .bubble-time { font-size: 11.5px; color: var(--text-secondary); margin-top: 10px; text-align: right; }
+  .cycle-dots { display: flex; gap: 6px; justify-content: center; margin-top: 18px; }
+  .cycle-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+  .cycle-dots span.active { background: var(--accent); }
+
+  /* ---------- Sections ---------- */
+  section { padding: 72px 0; }
+  .section-border-top { border-top: 1px solid var(--border); }
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: clamp(24px, 3vw, 32px);
+    margin-bottom: 12px;
+  }
+  .section-lead {
+    color: var(--text-secondary);
+    font-size: 15.5px;
+    max-width: 560px;
+    margin-bottom: 44px;
+  }
+
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .problem-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px;
+  }
+  .problem-stat {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    color: var(--negative);
+    margin-bottom: 10px;
+  }
+  .problem-card p { color: var(--text-secondary); font-size: 14.5px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .step h3 { font-family: 'Space Grotesk', sans-serif; font-size: 17px; margin-bottom: 8px; }
+  .step p { color: var(--text-secondary); font-size: 14.5px; }
+  .step-cmd {
+    display: inline-block;
+    margin-top: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 6px;
+    color: var(--positive);
+  }
+
+  .proof-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 28px;
+    align-items: center;
+  }
+  .proof-box .mono-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.9;
+    white-space: pre;
+  }
+  .proof-caption { color: var(--text-secondary); font-size: 13.5px; }
+  .proof-caption strong { color: var(--text-primary); }
+
+  .pricing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .price-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px;
+  }
+  .price-card.featured { border-color: var(--accent); position: relative; }
+  .price-tag {
+    position: absolute;
+    top: -12px;
+    left: 28px;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.03em;
+  }
+  .price-card h3 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; margin-bottom: 6px; }
+  .price-card .price { font-family: 'IBM Plex Mono', monospace; font-size: 30px; margin: 14px 0; }
+  .price-card .price span { font-size: 14px; color: var(--text-secondary); font-family: 'IBM Plex Sans', sans-serif; }
+  .price-card ul { list-style: none; margin: 18px 0 24px; }
+  .price-card li { font-size: 14px; color: var(--text-secondary); padding: 6px 0; display: flex; gap: 8px; }
+  .price-card li::before { content: '✓'; color: var(--positive); font-weight: 700; }
+
+  .final-cta {
+    text-align: center;
+    padding: 88px 0;
+  }
+  .final-cta h2 { margin-bottom: 14px; }
+  .final-cta .section-lead { margin: 0 auto 32px; }
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 0;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; padding-top: 48px; }
+    .problem-grid, .steps { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .proof-box { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand">
+      <span class="brand-mark">M</span>
+      MarketAlert
+    </div>
+    <a href="@demo11844_bot" class="nav-cta">Get early access</a>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <div>
+    <div class="eyebrow"><span class="eyebrow-dot"></span> Naira volatility is up right now</div>
+    <h1>The naira doesn't wait.<br>Neither should <span>you</span>.</h1>
+    <p class="hero-sub">
+      Set the USD/NGN rate you're waiting for — get pinged on Telegram the instant it hits.
+      No refreshing X, no checking your BDC group every hour. Also covers gold and crypto.
+    </p>
+    <div class="hero-actions">
+      <a href="#cta" class="btn-primary">Try it free on Telegram →</a>
+      <a href="#how" class="btn-secondary">See how it works</a>
+    </div>
+    <div class="hero-note">
+      <span class="mono" style="color:var(--positive)">●</span>
+      Live on Telegram now &nbsp;·&nbsp; Free during early access
+    </div>
+  </div>
+
+  <div class="phone-frame">
+    <div id="bubble-container"></div>
+    <div class="cycle-dots" id="cycle-dots"></div>
+  </div>
+</header>
+
+<section class="section-border-top">
+  <div class="wrap">
+    <h2>You find out too late. That costs real money.</h2>
+    <p class="section-lead">
+      The gap between "I should have converted this morning" and "I checked at lunch" is where freelancers,
+      importers, and small traders lose the most.
+    </p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-stat">3%+</div>
+        <p>Typical swing between a good day and a bad day to convert — enough to matter on a real invoice, missed because nobody's watching the rate for you.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-stat">Manual</div>
+        <p>Checking a BDC group, an app, or X every hour is a full-time job you didn't sign up for — and you'll still miss the exact moment it moves.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-stat">Zero cost</div>
+        <p>to try it. Message the bot, set your number, and get out of the business of manually watching a screen.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-border-top" id="how">
+  <div class="wrap">
+    <h2>Three messages. That's the whole setup.</h2>
+    <p class="section-lead">No app to install, no account to create — it runs entirely inside Telegram, where you probably already are.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Message the bot</h3>
+        <p>Open a chat, say hello. No signup form, no password.</p>
+        <div class="step-cmd">/start</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Set your number</h3>
+        <p>Tell it the rate you're waiting for. Works for USD/NGN, gold, BTC, and more.</p>
+        <div class="step-cmd">/watch USDNGN 1400</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Get pinged the second it hits</h3>
+        <p>Checked automatically every minute. The moment it crosses your line, you know — nobody else has to tell you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-border-top">
+  <div class="wrap">
+    <h2>Real data, honestly labeled</h2>
+    <p class="section-lead">This is an actual response from the live bot — not a mockup.</p>
+    <div class="proof-box">
+      <div class="mono-block">📊 USDNGN
+Price: 1366.66
+High:  1369.21
+Low:   1366.02
+24h Change: +0.01%
+Time: 21:00 UTC
+
+ℹ️ Official interbank rate.
+Parallel market typically
+trades a few % higher.</div>
+      <div class="proof-caption">
+        <strong>We label the rate honestly</strong> — official interbank, not the street rate — so you always know exactly what you're looking at. No inflated numbers to make a chart look more dramatic.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-border-top">
+  <div class="wrap">
+    <h2>Early access pricing</h2>
+    <p class="section-lead">Founding users lock in this rate before public pricing launches.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <h3>Free</h3>
+        <div class="price">₦0<span>/forever</span></div>
+        <ul>
+          <li>1 asset watched</li>
+          <li>Unlimited price checks</li>
+          <li>Alerts checked every minute</li>
+        </ul>
+        <a href="#cta" class="btn-secondary" style="display:block; text-align:center;">Start free</a>
+      </div>
+      <div class="price-card featured">
+        <div class="price-tag">FOUNDING USER</div>
+        <h3>Pro</h3>
+        <div class="price">Ask me<span>/ early access</span></div>
+        <ul>
+          <li>Unlimited assets watched</li>
+          <li>Priority alert delivery</li>
+          <li>Direct line to me for feature requests</li>
+          <li>Price locked in before public launch</li>
+        </ul>
+        <a href="#cta" class="btn-primary" style="display:block; text-align:center;">Message me directly</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta section-border-top" id="cta">
+  <div class="wrap">
+    <h2>Stop checking. Start watching.</h2>
+    <p class="section-lead">Message the bot, set your rate, get on with your day.</p>
+    <a href="https://t.me/YOUR_BOT_USERNAME" class="btn-primary" style="font-size:16px; padding:15px 30px;">Open in Telegram →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">MarketAlert · Built in Nigeria · Questions? Message directly on Telegram</div>
+</footer>
+
+<script>
+  const alerts = [
+    {
+      label: 'THRESHOLD ALERT', title: 'USDNGN crossed 1400',
+      rows: [['Current Price', '1400.12', 'down'], ['Change', '+2.14%', 'up']],
+      time: '14:42 UTC'
+    },
+    {
+      label: 'THRESHOLD ALERT', title: 'XAUUSD crossed 2450',
+      rows: [['Current Price', '2450.80', 'up'], ['Change', '+0.62%', 'up']],
+      time: '09:15 UTC'
+    },
+    {
+      label: 'THRESHOLD ALERT', title: 'BTCUSD crossed 68000',
+      rows: [['Current Price', '68012.40', 'up'], ['Change', '+1.85%', 'up']],
+      time: '02:03 UTC'
+    }
+  ];
+
+  const container = document.getElementById('bubble-container');
+  const dotsEl = document.getElementById('cycle-dots');
+  let i = 0;
+
+  alerts.forEach((_, idx) => {
+    const dot = document.createElement('span');
+    if (idx === 0) dot.classList.add('active');
+    dotsEl.appendChild(dot);
+  });
+
+  function render() {
+    const a = alerts[i];
+    container.innerHTML = `
+      <div class="bubble">
+        <div class="bubble-head">🚨 ${a.label}</div>
+        <div class="bubble-title">${a.title}</div>
+        ${a.rows.map(([label, val, dir]) => `
+          <div class="bubble-row">
+            <span class="label">${label}</span>
+            <span class="val ${dir}">${val}</span>
+          </div>
+        `).join('')}
+        <div class="bubble-time">${a.time}</div>
+      </div>
+    `;
+    [...dotsEl.children].forEach((d, idx) => d.classList.toggle('active', idx === i));
+  }
+
+  render();
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceMotion) {
+    setInterval(() => {
+      i = (i + 1) % alerts.length;
+      render();
+    }, 3200);
+  }
+</script>
+
+</body>
+</html>
